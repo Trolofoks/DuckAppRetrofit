@@ -5,20 +5,20 @@ import android.net.NetworkCapabilities
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 @Composable
 fun DuckScreen(viewModel: DuckViewModel, connectivityManager: ConnectivityManager) {
  
 
-    val duck = viewModel.duck.collectAsState(initial = null)
+    val duckState = viewModel.duckState.collectAsState()
+    val duckError = viewModel.error
 
     val show = remember { mutableStateOf("empty")}
 
@@ -28,13 +28,14 @@ fun DuckScreen(viewModel: DuckViewModel, connectivityManager: ConnectivityManage
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+
             Text(text = "Test Duck Api")
             if (show.value == "image"){
                 Box(modifier = Modifier.size(256.dp), contentAlignment = Alignment.Center){
                     CircularProgressIndicator(modifier = Modifier.size(128.dp))
-                    duck.value?.let {
+                    duckState.value.duck.let {
                         Image(
-                            painter = rememberAsyncImagePainter(model = duck.value!!.url),
+                            painter = rememberAsyncImagePainter(model = it!!.url),
                             contentDescription = "Quack",
                             modifier = Modifier
                                 .padding(vertical = 16.dp)
@@ -45,15 +46,20 @@ fun DuckScreen(viewModel: DuckViewModel, connectivityManager: ConnectivityManage
             } else if (show.value == "error"){
                 Text(text = "No Internet", style = MaterialTheme.typography.headlineMedium)
             }
+
+            rememberCoroutineScope().launch {
+
+
+            }
             Button(onClick = {
 
                 val networkCapabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
                 val hasInternetAccess = networkCapabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
 
 
-                if (hasInternetAccess){
-                    viewModel.getDuck()
+                if (true){
                     show.value = "image"
+                    viewModel.getDuck()
                 } else {
                     show.value = "error"
                 }
