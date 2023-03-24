@@ -6,45 +6,26 @@ import androidx.lifecycle.viewModelScope
 import com.honey.duckappretrofit.data.model.Duck
 import com.honey.duckappretrofit.data.model.DuckState
 import com.honey.duckappretrofit.data.remote.RandomDuckApiService
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import retrofit2.await
+import java.io.IOException
 
 
 class DuckViewModel(private val duckApi: RandomDuckApiService) : ViewModel() {
-    private val _duckState = MutableStateFlow(DuckState(loading = true))
-    val duckState : StateFlow<DuckState> = _duckState.asStateFlow()
+    private val _duck = MutableStateFlow<DuckState>(value = DuckState())
+    val duck : StateFlow<DuckState> = _duck.asStateFlow()
 
-    private val _error = MutableSharedFlow<String>()
-    val error : SharedFlow<String> = _error.asSharedFlow()
 
     fun getDuck(){
         viewModelScope.launch {
-            duckApi.getDuck().enqueue(object : Callback<Duck>{
-                override fun onResponse(call: Call<Duck>, response: Response<Duck>) {
-                    if (response.isSuccessful){
-                        val duck = response.body()
-                        duck?.let {
-                            _duckState.value = DuckState(duck = it, loading = false)
-                        }
-                    } else {
-                        setError(response.message())
-                    }
-                }
-                override fun onFailure(call: Call<Duck>, t: Throwable) {
-                    setError("Can't connect to server")
-                }
-            })
+            _duck.tryEmit(DuckState(duck = null, loading = true, error = null))
+            try {
+                duckApi.getRandomDuck().let { _duck.tryEmit(DuckState(duck = it, loading = false, error = null)) }
+            } catch (e: IOException) {
+                _duck.tryEmit(DuckState(duck = null, loading = false, error = e.toString()))
+            }
         }
     }
-    private fun setError(message: String){
-        viewModelScope.launch {
-            _error.tryEmit(message)
-            delay(10000)
-            _error.tryEmit("")
-        }
-    }
+
 }

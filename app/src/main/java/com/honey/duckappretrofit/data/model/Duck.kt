@@ -1,6 +1,10 @@
 package com.honey.duckappretrofit.data.model
 
+import com.google.gson.annotations.SerializedName
+
 data class Duck(
-    val url: String,
-    val message: String
-)
+    @SerializedName("url") val url: String,
+    @SerializedName("message") val message: String
+){
+    constructor() : this("", "")
+}

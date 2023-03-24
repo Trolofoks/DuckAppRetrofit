@@ -5,6 +5,6 @@ import retrofit2.Call
 import retrofit2.http.GET
 
 interface RandomDuckApiService {
-    @GET("random")
-    suspend fun getDuck(): Call<Duck>
+    @GET(Endpoints.GET_RANDOM_DUCK)
+    suspend fun getRandomDuck(): Duck
 }
